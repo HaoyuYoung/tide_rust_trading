@@ -1,16 +1,13 @@
 use crate::exchanges::mexc::model::{QueryWithSignature, ServerTimeMEXC};
 use crate::exchanges::model::{nil, Config, ServerTime};
 use crate::exchanges::Exchanges;
-use hmac::digest::InvalidLength;
-use hmac::{Hmac, Mac};
-use http::{HeaderMap, HeaderValue, StatusCode};
-use reqwest::blocking::Response;
-use sha2::Sha256;
+use std::io::Error;
 
-use serde_json::Value;
-use std::collections::HashMap;
-use std::fmt::Error;
-use std::io::empty;
+use hmac::{Hmac, Mac};
+use http::{HeaderMap, HeaderValue};
+use reqwest::blocking::Response;
+
+use sha2::Sha256;
 
 pub struct Client {
     api_key: String,
@@ -21,7 +18,7 @@ pub struct Client {
 }
 
 impl Client {
-    fn get<T>(&self, url: String, query: T) -> Result<(Response), Box<dyn std::error::Error>>
+    fn get<T>(&self, url: String, query: T) -> Result<Response, Box<dyn std::error::Error>>
     where
         T: serde::Serialize,
     {
@@ -41,10 +38,7 @@ impl Client {
             .send()?;
         match res.status().as_str() {
             "200" => Ok(res),
-            _ => {
-                println!("{}", res.text()?);
-                Err(Box::new(Error))
-            }
+            _ => Err(Box::from(res.text()?.as_str())),
         }
     }
     fn sign_query<T>(&self, query: T) -> Result<QueryWithSignature<T>, Box<dyn std::error::Error>>
@@ -105,8 +99,8 @@ mod tests {
             client: Default::default(),
         };
         let cfg = Config {
-            api_key: "".to_string(),
-            secret_key: "".to_string(),
+            api_key: "mx0vglNppksUeR3yhy".to_string(),
+            secret_key: "ddc2a396e5694fa7bb34b48ccc078abd".to_string(),
             passphrase: "".to_string(),
             url: "https://api.mexc.com".to_string(),
         };
@@ -124,8 +118,8 @@ mod tests {
             client: Default::default(),
         };
         let cfg = Config {
-            api_key: "".to_string(),
-            secret_key: "".to_string(),
+            api_key: "mx0aBYs33eIilxBWC5".to_string(),
+            secret_key: "45d0b3c26f2644f19bfb98b07741b2f5".to_string(),
             passphrase: "".to_string(),
             url: "https://api.mexc.com".to_string(),
         };
