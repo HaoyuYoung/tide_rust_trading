@@ -11,4 +11,15 @@ pub struct ServerTime {
 }
 
 #[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct nil {}
+#[derive(Debug)]
+pub struct AllSymbols {
+    pub symbols: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct TickerPrice {
+    pub symbol: String,
+    pub price: String,
+}

@@ -17,3 +17,17 @@ impl<T> QueryWithSignature<T> {
         Self { query, signature }
     }
 }
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AllSymbolsMEXC {
+    pub code: i32,
+    pub data: Vec<String>,
+    pub msg: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TickerPriceMEXC {
+    pub symbol: String,
+    pub price: String,
+}
