@@ -23,3 +23,22 @@ pub struct TickerPrice {
     pub symbol: String,
     pub price: String,
 }
+#[derive(Debug)]
+
+pub struct Depth {
+    pub bids: Vec<PriceLevel>,
+    pub asks: Vec<PriceLevel>,
+}
+#[derive(Debug)]
+pub struct PriceLevel {
+    pub price: String,
+    pub size: String,
+}
+#[derive(Debug)]
+pub struct SymbolInfo {
+    pub symbol: String,
+    pub base_precision: i64,
+    pub quote_precision: i64,
+    pub min_quote_amount: String,
+    pub min_base_amount: String,
+}
