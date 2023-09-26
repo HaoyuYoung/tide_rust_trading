@@ -1,6 +1,10 @@
-use crate::exchanges::mexc::model::{AllSymbolsMEXC, DepthMEXC, SymbolInfoMEXC, TickerPriceMEXC};
+use crate::exchanges::mexc::model::{
+    AllSymbolsMEXC, DepthMEXC, KlineMEXC, SymbolInfoMEXC, TickerPriceMEXC,
+};
 use crate::exchanges::mexc::spot::client::Client;
-use crate::exchanges::model::{AllSymbols, Depth, PriceLevel, SymbolInfo, TickerPrice};
+use crate::exchanges::model::{
+    AllSymbols, Depth, Kline, KlineInterval, PriceLevel, SymbolInfo, TickerPrice,
+};
 use crate::exchanges::Market;
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -14,15 +18,15 @@ impl Market for Client {
             .as_millis();
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
-        pub struct Paramters {
+        struct Paramters {
             recv_window: Option<u64>,
             timestamp: Option<u128>,
         }
         let p = Paramters {
-            recv_window: Option::from(5000),
+            recv_window: None,
             timestamp: Option::from(time),
         };
-        let res = self.get(url, p)?;
+        let res = self.get(url, p, false)?;
 
         let r: AllSymbolsMEXC = res.json()?;
 
@@ -37,17 +41,17 @@ impl Market for Client {
             .as_millis();
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
-        pub struct Paramters {
+        struct Paramters {
             symbol: Option<String>,
             recv_window: Option<u64>,
             timestamp: Option<u128>,
         }
         let p = Paramters {
             symbol: Option::from(symbol),
-            recv_window: Option::from(5000),
+            recv_window: None,
             timestamp: Option::from(time),
         };
-        let res = self.get(url, p)?;
+        let res = self.get(url, p, false)?;
 
         let r: TickerPriceMEXC = res.json()?;
 
@@ -65,7 +69,7 @@ impl Market for Client {
             .as_millis();
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
-        pub struct Paramters {
+        struct Paramters {
             symbol: Option<String>,
             limit: Option<i64>,
             recv_window: Option<u64>,
@@ -74,10 +78,10 @@ impl Market for Client {
         let p = Paramters {
             symbol: Option::from(symbol),
             limit: Option::from(limit.parse::<i64>().unwrap()),
-            recv_window: Option::from(5000),
+            recv_window: None,
             timestamp: Option::from(time),
         };
-        let res = self.get(url, p)?;
+        let res = self.get(url, p, false)?;
 
         let r: DepthMEXC = res.json()?;
 
@@ -106,7 +110,7 @@ impl Market for Client {
             .as_millis();
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
-        pub struct Paramters {
+        struct Paramters {
             symbol: Option<String>,
 
             recv_window: Option<u64>,
@@ -115,10 +119,10 @@ impl Market for Client {
         let p = Paramters {
             symbol: Option::from(symbol),
 
-            recv_window: Option::from(5000),
+            recv_window: None,
             timestamp: Option::from(time),
         };
-        let res = self.get(url, p)?;
+        let res = self.get(url, p, false)?;
 
         let r: SymbolInfoMEXC = res.json()?;
         println!("{:?} {:?}", "Full Msg:  ", &r);
@@ -130,10 +134,78 @@ impl Market for Client {
             min_base_amount: r.symbols[0].base_size_precision.clone(),
         })
     }
+
+    fn get_klines(
+        &self,
+        symbol: String,
+        interval: KlineInterval,
+        start_time: Option<u128>,
+        end_time: Option<u128>,
+        limit: i64,
+    ) -> Result<Vec<Kline>, Box<dyn Error>> {
+        let url: String = format!("{}{}", self.url, String::from("/api/v3/klines"));
+        let time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        let interval_mexc = match interval {
+            KlineInterval::Min1 => String::from("1m"),
+            KlineInterval::Min5 => String::from("5m"),
+            KlineInterval::Min15 => String::from("15m"),
+            KlineInterval::Min30 => String::from("30m"),
+            KlineInterval::H1 => String::from("60m"),
+            KlineInterval::H4 => String::from("4h"),
+            KlineInterval::D1 => String::from("1d"),
+            KlineInterval::M1 => String::from("1M"),
+            _ => String::from("1d"),
+        };
+        #[derive(Debug, serde::Serialize, serde::Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Paramters {
+            symbol: Option<String>,
+            interval: Option<String>,
+            startTime: Option<u128>,
+            endTime: Option<u128>,
+            limit: Option<i64>,
+            recv_window: Option<u64>,
+            timestamp: Option<u128>,
+        }
+        let p = Paramters {
+            symbol: Option::from(symbol.clone()),
+            interval: Option::from(interval_mexc),
+            startTime: start_time,
+            endTime: end_time,
+            limit: Option::from(limit),
+            recv_window: None,
+            timestamp: Option::from(time),
+        };
+        let res = self.get(url, p, false)?;
+
+        let r: Vec<KlineMEXC> = res.json()?;
+        let mut klines: Vec<Kline> = Vec::new();
+
+        for kline in r {
+            let kl = Kline {
+                symbol: symbol.clone(),
+                interval,
+                open_time: kline.open_time,
+                close_time: kline.close_time,
+                open: kline.open,
+                high: kline.high,
+                low: kline.low,
+                close: kline.close,
+                volume: kline.volume,
+                volume_quote: kline.quote_asset_volume,
+            };
+            klines.push(kl);
+        }
+
+        Ok(klines)
+    }
 }
 mod tests {
     use crate::exchanges::mexc::spot::client::new_client_cfg;
-    use crate::exchanges::model::Config;
+    use crate::exchanges::model::{Config, KlineInterval};
     use crate::exchanges::Market;
 
     #[test]
@@ -145,7 +217,7 @@ mod tests {
             url: "https://api.mexc.com".to_string(),
         };
         let c = new_client_cfg(cfg);
-        let r = c.get_symbol_info("NAOUSDT".to_string());
-        println!("{:?}", r)
+        let r = c.get_ticker_price("BTCUSDT".to_string());
+        println!("{:?}", r);
     }
 }

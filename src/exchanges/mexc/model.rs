@@ -94,3 +94,66 @@ pub struct SymbolInfoMEXC {
     pub exchange_filters: Vec<serde_json::Value>,
     pub symbols: Vec<Symbols>,
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KlineMEXC {
+    pub open_time: u128,
+    pub open: String,
+    pub high: String,
+    pub low: String,
+    pub close: String,
+    pub volume: String,
+
+    pub close_time: u128,
+    pub quote_asset_volume: String,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BalanceMEXC {
+    pub asset: String,
+    pub free: String,
+    pub locked: String,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountInfo {
+    #[serde(rename = "makerCommission")]
+    pub maker_commission: i64,
+    #[serde(rename = "takerCommission")]
+    pub taker_commission: i64,
+    #[serde(rename = "buyerCommission")]
+    pub buyer_commission: i64,
+    #[serde(rename = "sellerCommission")]
+    pub seller_commission: i64,
+    #[serde(rename = "canTrade")]
+    pub can_trade: bool,
+    #[serde(rename = "canWithdraw")]
+    pub can_withdraw: bool,
+    #[serde(rename = "canDeposit")]
+    pub can_deposit: bool,
+    #[serde(rename = "updateTime")]
+    pub update_time: Option<i128>,
+    #[serde(rename = "accountType")]
+    pub account_type: String,
+    pub balances: Vec<BalanceMEXC>,
+    pub permissions: Vec<String>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Data {
+    #[serde(rename = "mxDeductEnable")]
+    pub mx_deduct_enable: bool,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscountMEXC {
+    pub data: Data,
+    pub code: i64,
+    pub msg: String,
+    pub timestamp: i64,
+}

@@ -42,3 +42,41 @@ pub struct SymbolInfo {
     pub min_quote_amount: String,
     pub min_base_amount: String,
 }
+#[derive(Debug)]
+pub struct Kline {
+    pub symbol: String,
+    pub interval: KlineInterval,
+    pub open_time: u128,
+    pub close_time: u128,
+    pub open: String,
+    pub high: String,
+    pub low: String,
+    pub close: String,
+    pub volume: String,
+    pub volume_quote: String,
+}
+#[derive(Debug, Clone, Copy)]
+pub enum KlineInterval {
+    Min1,
+    Min5,
+    Min15,
+    Min30,
+    H1,
+    H4,
+    H8,
+    D1,
+    W1,
+    M1,
+}
+#[derive(Debug)]
+pub struct TradingFee {
+    pub maker: String,
+    pub taker: String,
+}
+#[derive(Debug)]
+pub struct Balance {
+    pub token: String,
+    pub free: String,
+    pub locked: String,
+    pub total: String,
+}

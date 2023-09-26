@@ -19,6 +19,7 @@ impl Client {
         &self,
         url: String,
         query: T,
+        sign: bool,
     ) -> Result<Response, Box<dyn std::error::Error>>
     where
         T: serde::Serialize,
@@ -28,12 +29,15 @@ impl Client {
         headers.insert("X-MEXC-APIKEY", HeaderValue::from_str(&self.api_key)?);
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
         let signed = self.sign_query(query)?;
-        let res = self
-            .client
-            .get(url.as_str())
-            .query(&signed)
-            //.headers(headers)
-            .send()?;
+        let res = if sign {
+            self.client
+                .get(url.as_str())
+                .query(&signed)
+                .headers(headers)
+                .send()?
+        } else {
+            self.client.get(url.as_str()).query(&signed).send()?
+        };
         match res.status().as_str() {
             "200" => Ok(res),
             _ => Err(Box::from(res.text()?.as_str())),
@@ -66,12 +70,12 @@ impl Clients for Client {
     }
     fn ping(&self) -> Result<bool, Box<dyn std::error::Error>> {
         let url: String = format!("{}{}", self.url, String::from("/api/v3/ping"));
-        let res = self.get(url, nil {})?;
+        let res = self.get(url, nil {}, false)?;
         Ok(res.status().is_success())
     }
     fn time(&self) -> Result<ServerTime, Box<dyn std::error::Error>> {
         let url: String = format!("{}{}", self.url, String::from("/api/v3/time"));
-        let res = self.get(url, nil {})?;
+        let res = self.get(url, nil {}, false)?;
         let r: ServerTimeMEXC = res.json()?;
         Ok(ServerTime {
             server_time: r.server_time,
