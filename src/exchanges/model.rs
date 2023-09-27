@@ -80,3 +80,22 @@ pub struct Balance {
     pub locked: String,
     pub total: String,
 }
+#[derive(Debug, Clone, Copy)]
+pub enum Side {
+    Ask,
+    Bid,
+}
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OrderType {
+    Limit,
+    Market,
+    Taker,
+    Maker,
+    FOK,
+}
+#[derive(Debug)]
+pub struct OrderID {
+    pub symbol: String,
+    pub order_id: String,
+    pub transaction_time: i128,
+}

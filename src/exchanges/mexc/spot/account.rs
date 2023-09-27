@@ -96,10 +96,37 @@ impl Account for Client {
 
         Ok(r.data.mx_deduct_enable)
     }
+
+    fn enable_discount(&self, switch: bool) -> Result<bool, Box<dyn Error>> {
+        let url: String = format!("{}{}", self.url, String::from("api/v3/mxDeduct/enable"));
+        let time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        #[derive(Debug, serde::Serialize, serde::Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Paramters {
+            recv_window: Option<u64>,
+            timestamp: Option<u128>,
+            mxDeductEnable: Option<bool>,
+        }
+
+        let p = Paramters {
+            mxDeductEnable: Option::from(switch),
+            recv_window: Option::from(500),
+            timestamp: Option::from(time),
+        };
+        let res = self.get(url, p, true)?;
+
+        let r: DiscountMEXC = res.json()?;
+        println!("{:?} {:?}", "Full Msg:  ", &r);
+
+        Ok(r.data.mx_deduct_enable)
+    }
 }
 
 mod tests {
-    use crate::exchanges::mexc::spot::client::new_client_cfg;
+    use crate::exchanges::mexc::spot::client::Client;
     use crate::exchanges::model::Config;
     use crate::exchanges::{Account, Market};
 
@@ -111,8 +138,8 @@ mod tests {
             passphrase: "".to_string(),
             url: "https://api.mexc.com".to_string(),
         };
-        let c = new_client_cfg(cfg);
-        let r = c.get_all_symbol();
+        let c = Client::new_client_cfg(cfg);
+        let r = c.get_balance("BNB".to_string());
         println!("{:?}", r);
     }
 }

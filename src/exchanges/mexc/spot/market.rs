@@ -9,6 +9,21 @@ use crate::exchanges::Market;
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+impl Client {
+    fn get_interval_mexc(interval: KlineInterval) -> String {
+        match interval {
+            KlineInterval::Min1 => String::from("1m"),
+            KlineInterval::Min5 => String::from("5m"),
+            KlineInterval::Min15 => String::from("15m"),
+            KlineInterval::Min30 => String::from("30m"),
+            KlineInterval::H1 => String::from("60m"),
+            KlineInterval::H4 => String::from("4h"),
+            KlineInterval::D1 => String::from("1d"),
+            KlineInterval::M1 => String::from("1M"),
+            _ => String::from("1d"),
+        }
+    }
+}
 impl Market for Client {
     fn get_all_symbol(&self) -> Result<AllSymbols, Box<dyn std::error::Error>> {
         let url: String = format!("{}{}", self.url, String::from("/api/v3/defaultSymbols"));
@@ -42,12 +57,12 @@ impl Market for Client {
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
         struct Paramters {
-            symbol: Option<String>,
+            symbol: String,
             recv_window: Option<u64>,
             timestamp: Option<u128>,
         }
         let p = Paramters {
-            symbol: Option::from(symbol),
+            symbol,
             recv_window: None,
             timestamp: Option::from(time),
         };
@@ -70,13 +85,13 @@ impl Market for Client {
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
         struct Paramters {
-            symbol: Option<String>,
+            symbol: String,
             limit: Option<i64>,
             recv_window: Option<u64>,
             timestamp: Option<u128>,
         }
         let p = Paramters {
-            symbol: Option::from(symbol),
+            symbol,
             limit: Option::from(limit.parse::<i64>().unwrap()),
             recv_window: None,
             timestamp: Option::from(time),
@@ -148,34 +163,24 @@ impl Market for Client {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis();
-        let interval_mexc = match interval {
-            KlineInterval::Min1 => String::from("1m"),
-            KlineInterval::Min5 => String::from("5m"),
-            KlineInterval::Min15 => String::from("15m"),
-            KlineInterval::Min30 => String::from("30m"),
-            KlineInterval::H1 => String::from("60m"),
-            KlineInterval::H4 => String::from("4h"),
-            KlineInterval::D1 => String::from("1d"),
-            KlineInterval::M1 => String::from("1M"),
-            _ => String::from("1d"),
-        };
+        let interval_mexc = Client::get_interval_mexc(interval);
         #[derive(Debug, serde::Serialize, serde::Deserialize)]
         #[serde(rename_all = "camelCase")]
         struct Paramters {
-            symbol: Option<String>,
-            interval: Option<String>,
+            symbol: String,
+            interval: String,
             startTime: Option<u128>,
             endTime: Option<u128>,
-            limit: Option<i64>,
+            limit: i64,
             recv_window: Option<u64>,
             timestamp: Option<u128>,
         }
         let p = Paramters {
-            symbol: Option::from(symbol.clone()),
-            interval: Option::from(interval_mexc),
+            symbol: symbol.clone(),
+            interval: interval_mexc,
             startTime: start_time,
             endTime: end_time,
-            limit: Option::from(limit),
+            limit,
             recv_window: None,
             timestamp: Option::from(time),
         };
@@ -204,7 +209,8 @@ impl Market for Client {
     }
 }
 mod tests {
-    use crate::exchanges::mexc::spot::client::new_client_cfg;
+
+    use crate::exchanges::mexc::spot::client::Client;
     use crate::exchanges::model::{Config, KlineInterval};
     use crate::exchanges::Market;
 
@@ -216,8 +222,8 @@ mod tests {
             passphrase: "".to_string(),
             url: "https://api.mexc.com".to_string(),
         };
-        let c = new_client_cfg(cfg);
-        let r = c.get_ticker_price("BTCUSDT".to_string());
+        let c = Client::new_client_cfg(cfg);
+        let r = c.get_klines("BTCUSDT".to_string(), KlineInterval::Min1, None, None, 10);
         println!("{:?}", r);
     }
 }

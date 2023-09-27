@@ -157,3 +157,30 @@ pub struct DiscountMEXC {
     pub msg: String,
     pub timestamp: i64,
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TradingSymbolsMEXC {
+    pub code: i64,
+    pub data: Vec<String>,
+    pub msg: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderResutl {
+    #[serde(rename = "symbol")]
+    pub symbol: String,
+    #[serde(rename = "orderId")]
+    pub order_id: String,
+    #[serde(rename = "orderListId")]
+    pub order_list_id: i64,
+    pub price: String,
+    #[serde(rename = "origQty")]
+    pub orig_qty: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub side: String,
+    #[serde(rename = "transactTime")]
+    pub transact_time: i64,
+}

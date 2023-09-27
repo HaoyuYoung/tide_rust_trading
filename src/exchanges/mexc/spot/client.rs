@@ -43,6 +43,34 @@ impl Client {
             _ => Err(Box::from(res.text()?.as_str())),
         }
     }
+    pub(crate) fn post<T>(
+        &self,
+        url: String,
+        query: T,
+        sign: bool,
+    ) -> Result<Response, Box<dyn std::error::Error>>
+    where
+        T: serde::Serialize,
+    {
+        let mut headers = HeaderMap::new();
+
+        headers.insert("X-MEXC-APIKEY", HeaderValue::from_str(&self.api_key)?);
+        headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+        let signed = self.sign_query(query)?;
+        let res = if sign {
+            self.client
+                .post(url.as_str())
+                .query(&signed)
+                .headers(headers)
+                .send()?
+        } else {
+            self.client.post(url.as_str()).query(&signed).send()?
+        };
+        match res.status().as_str() {
+            "200" => Ok(res),
+            _ => Err(Box::from(res.text()?.as_str())),
+        }
+    }
     fn sign_query<T>(&self, query: T) -> Result<QueryWithSignature<T>, Box<dyn std::error::Error>>
     where
         T: serde::Serialize,
@@ -55,6 +83,16 @@ impl Client {
         let signature = hex::encode(mac_bytes);
 
         Ok(QueryWithSignature::new(query, signature))
+    }
+    pub fn new_client_cfg(cfg: Config) -> Client {
+        let c: Client = Client {
+            api_key: "".to_string(),
+            secret_key: "".to_string(),
+            passphrase: "".to_string(),
+            url: "".to_string(),
+            client: Default::default(),
+        };
+        c.new_client(cfg)
     }
 }
 
@@ -82,16 +120,7 @@ impl Clients for Client {
         })
     }
 }
-pub fn new_client_cfg(cfg: Config) -> Client {
-    let c: Client = Client {
-        api_key: "".to_string(),
-        secret_key: "".to_string(),
-        passphrase: "".to_string(),
-        url: "".to_string(),
-        client: Default::default(),
-    };
-    c.new_client(cfg)
-}
+
 #[cfg(test)]
 mod tests {
     use crate::exchanges::mexc::spot::client::{Client, Clients};

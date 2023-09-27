@@ -1,6 +1,6 @@
 use crate::exchanges::model::{
-    AllSymbols, Balance, Config, Depth, Kline, KlineInterval, ServerTime, SymbolInfo, TickerPrice,
-    TradingFee,
+    AllSymbols, Balance, Config, Depth, Kline, KlineInterval, OrderID, OrderType, ServerTime, Side,
+    SymbolInfo, TickerPrice, TradingFee,
 };
 
 pub mod mexc;
@@ -35,4 +35,21 @@ pub trait Account {
     fn get_balance(&self, token: String) -> Result<Balance, Box<dyn std::error::Error>>;
 
     fn discount_status(&self) -> Result<bool, Box<dyn std::error::Error>>;
+
+    fn enable_discount(&self, switch: bool) -> Result<bool, Box<dyn std::error::Error>>;
+}
+
+pub trait Trade {
+    fn trading_symbols(&self) -> Result<Vec<String>, Box<dyn std::error::Error>>;
+
+    fn order(
+        &self,
+        symbol: String,
+        order_type: OrderType,
+        side: Side,
+        price: Option<String>,
+        amount: Option<String>,
+        quote_amount: Option<String>,
+        hidden: bool,
+    ) -> Result<OrderID, Box<dyn std::error::Error>>;
 }
